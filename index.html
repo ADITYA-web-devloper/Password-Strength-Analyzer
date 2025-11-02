@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Analyzer</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-dark-1: #0d1117;
+            --bg-dark-2: #16213e;
+            --accent-neon: #00ff99;
+            --accent-cyan: #00ffff;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            
+            /* Strength Colors */
+            --red: #ff4d4d;
+            --orange: #ffa500;
+            --yellow: #f0e68c;
+            --light-green: #90ee90;
+            --neon-green: var(--accent-neon);
+        }
+
+        @keyframes gradient-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes input-pulse {
+            0% {
+                box-shadow: 0 0 15px rgba(0, 255, 153, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 25px rgba(0, 255, 153, 1);
+            }
+            100% {
+                box-shadow: 0 0 15px rgba(0, 255, 153, 0.5);
+            }
+        }
+
+        .input-pulse {
+            animation: input-pulse 0.6s ease-in-out;
+        }
+
+        body {
+            font-family: 'Fira Code', monospace;
+            background: linear-gradient(-45deg, var(--bg-dark-1), var(--bg-dark-2), var(--accent-neon), var(--bg-dark-1));
+            background-size: 400% 400%;
+            animation: gradient-flow 15s ease infinite;
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column; /* Allow stacking of cards */
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem 1rem; /* Add padding for small screens */
+            box-sizing: border-box;
+        }
+
+        .glass-container {
+            width: 100%;
+            max-width: 448px; /* max-w-md */
+            background: rgba(13, 17, 23, 0.75); /* Dark background with opacity */
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; /* rounded-xl */
+            padding: 2rem; /* p-8 */
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* --- Global Header Styles --- */
+        .header-section h1 {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 600; /* font-bold */
+            text-align: center;
+            color: var(--text-primary);
+        }
+        
+        .header-section h2 { /* For new comparison card */
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 600;
+            text-align: center;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .header-section p {
+            margin-top: 0.5rem; /* mt-2 */
+            text-align: center;
+            font-size: 0.875rem; /* text-sm */
+            color: var(--text-secondary);
+        }
+        
+        .space-y-6 > * + * {
+            margin-top: 1.5rem; /* space-y-6 */
+        }
+        
+        /* --- Global Input Styles --- */
+        .input-group {
+            position: relative;
+        }
+        
+        .input-group .icon-lock {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .input-field { /* NEW: Generalized input class */
+            width: 100%;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--text-secondary);
+            border-radius: 8px; /* rounded-lg */
+            padding: 0.75rem 3rem 0.75rem 2.5rem; /* py-3 px-4 (adjusted for icons) */
+            color: var(--text-primary);
+            font-family: 'Fira Code', monospace;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 5px rgba(0, 255, 153, 0);
+            box-sizing: border-box; /* Ensure padding doesn't break layout */
+        }
+
+        .input-field::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent-neon);
+            box-shadow: 0 0 15px rgba(0, 255, 153, 0.5);
+        }
+        
+        .toggle-visibility-btn { /* NEW: Generalized toggle class */
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-visibility-btn:hover {
+            color: var(--accent-neon);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        /* --- Input Hint & Button Group Styles --- */
+        .input-hint {
+            font-size: 0.75rem; /* text-xs */
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 0.75rem;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column; 
+            gap: 1rem;
+            margin-top: 1.5rem; /* Matches space-y-6 */
+        }
+
+        #generate-message {
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--accent-cyan);
+            margin-top: 1rem;
+            animation: fadeIn 0.3s;
+        }
+
+        /* --- Global Button Styles --- */
+        .btn {
+            width: 100%;
+            background-color: transparent;
+            padding: 0.65rem;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        .btn:hover {
+            box-shadow: 0 0 20px rgba(0, 255, 153, 0.5);
+            transform: scale(1.02);
+        }
+        
+        .btn-neon {
+            border: 1px solid var(--accent-neon);
+            color: var(--accent-neon);
+        }
+        .btn-neon:hover {
+            background-color: var(--accent-neon);
+            color: var(--bg-dark-1);
+        }
+        
+        .btn-cyan {
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+        .btn-cyan:hover {
+            background-color: var(--accent-cyan);
+            color: var(--bg-dark-1);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+        
+        /* --- Global Results Styles --- */
+        .strength-bar-container {
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.25);
+            border-radius: 9999px; /* rounded-full */
+            height: 0.75rem; /* h-3 */
+            overflow: hidden;
+            margin-top: 1rem; /* Added for spacing in new tool */
+        }
+        
+        .strength-bar { /* NEW: Generalized bar class */
+            height: 0.75rem; /* h-3 */
+            border-radius: 9999px; /* rounded-full */
+            transition: all 0.5s ease-in-out;
+            background-color: var(--red); /* Default color */
+            width: 0%;
+        }
+
+        .strength-text-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-top: 0.5rem; /* From original space-y-4 */
+        }
+
+        .strength-text { /* NEW: Generalized class */
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .entropy-text { /* NEW: Generalized class */
+            font-size: 1rem; /* INCREASED for visibility */
+            color: var(--accent-cyan); /* CHANGED to a bright color */
+            font-weight: 500; /* ADDED */
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        /* --- FEATURE 2: Time to Crack Style --- */
+        #time-to-crack-text {
+            font-size: 0.875rem; /* text-sm */
+            color: var(--accent-cyan);
+            text-align: left;
+            margin-top: 0.25rem;
+            animation: fadeIn 0.5s ease-in-out;
+            font-weight: 500;
+        }
+        
+        #time-to-crack-text .fas {
+            margin-right: 0.5rem;
+            opacity: 0.8;
+        }
+
+        /* --- Main Analyzer Feedback Box --- */
+        #feedback-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--text-secondary);
+            border-radius: 8px; /* rounded-lg */
+            padding: 1rem; /* p-4 */
+            margin-top: 1rem; /* From original space-y-4 */
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        #feedback-box h3 {
+            font-weight: 600; /* font-semibold */
+            color: var(--text-primary);
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+
+        #feedback-list {
+            list-style-position: inside;
+            list-style-type: disc;
+            font-size: 0.875rem; /* text-sm */
+            color: var(--text-primary);
+        }
+        
+        #feedback-list li + li {
+            margin-top: 0.25rem; /* space-y-1 */
+        }
+
+        /* --- Main Analyzer Copy Button --- */
+        #copy-button {
+            margin-top: 1.5rem; /* space-y-6 */
+        }
+        
+        #copy-message {
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--accent-neon);
+            margin-top: 1rem;
+            animation: fadeIn 0.3s;
+        }
+        
+        /* --- Utility Class --- */
+        .hidden {
+            display: none !important; /* Added !important to override potential conflicts */
+        }
+
+        /* --- FEATURE 1: Comparison Tool Styles --- */
+        #comparison-container {
+            margin-top: 2rem;
+            max-width: 672px; /* max-w-2xl */
+        }
+
+        .comparison-grid {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .comparison-column {
+            flex: 1; /* Each column takes equal space */
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .comparison-column label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .comparison-results {
+            margin-top: 0.5rem;
+        }
+
+        .comparison-results .strength-text {
+            font-size: 1rem; /* Slightly smaller for the card */
+        }
+        .comparison-results .entropy-text {
+            font-size: 0.9rem; /* INCREASED for visibility */
+            /* Inherits the new color and weight from the rule above */
+        }
+        /* Duplicating time-to-crack style for comparison tool */
+        .time-to-crack-text-comparison {
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+            text-align: left;
+            margin-top: 0.25rem;
+            animation: fadeIn 0.5s ease-in-out;
+            font-weight: 500;
+        }
+        .time-to-crack-text-comparison .fas {
+            margin-right: 0.4rem;
+        }
+
+        .comparison-controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        #comparison-conclusion {
+            text-align: center;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--accent-neon);
+            margin-top: 1.5rem;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        /* --- Footer Style --- */
+        .footer-credit {
+            /* Position it below the main card */
+            position: fixed; /* Fixed position */
+            bottom: 1.5rem;
+            right: 1.5rem; 
+            font-family: 'Poppins', sans-serif; /* Using a cleaner font */
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            z-index: 10;
+        }
+
+        .footer-credit a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .footer-credit a:hover {
+            color: var(--text-primary);
+            text-shadow: 0 0 10px var(--accent-cyan);
+        }
+        
+        /* --- Responsive Styles --- */
+        @media (max-width: 640px) {
+            body {
+                padding: 1rem;
+                padding-bottom: 6rem; /* Add padding for footer */
+            }
+            .glass-container {
+                padding: 1.5rem;
+            }
+            .header-section h1 {
+                font-size: 1.5rem;
+            }
+            .header-section h2 {
+                font-size: 1.25rem;
+            }
+
+            .comparison-grid {
+                flex-direction: column;
+            }
+            .comparison-controls {
+                flex-direction: column;
+            }
+            
+            .footer-credit {
+                position: relative; /* Change to relative on mobile */
+                text-align: center;
+                right: auto;
+                bottom: auto;
+                margin-top: 2rem;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="glass-container">
+        
+        <div class="header-section">
+            <h1>Password Strength Analyzer</h1>
+            <p>See how secure your password is based on entropy.</p>
+        </div>
+
+        <div class="space-y-6">
+            <div class="input-group">
+                <i class="fas fa-lock icon-lock"></i>
+                <input id="password-input" name="password" type="password"
+                    placeholder="Enter your password..." class="input-field">
+                
+                <button id="toggle-visibility" type="button" title="Toggle visibility" class="toggle-visibility-btn">
+                    <i id="icon-show" class="fas fa-eye"></i>
+                    <i id="icon-hide" class="fas fa-eye-slash hidden"></i>
+                </button>
+            </div>
+
+            <p class="input-hint">Tip: Use 12+ characters with letters, numbers & symbols.</p>
+
+            <div class="button-group">
+                <button id="generate-strong-button" class="btn btn-neon">
+                    <i class="fas fa-magic"></i> Generate Strong Password
+                </button>
+                <button id="generate-very-strong-button" class="btn btn-neon">
+                    <i class="fas fa-shield-alt"></i> Generate Very Strong Password
+                </button>
+                <button id="clear-button" class="btn btn-cyan">
+                    <i class="fas fa-trash-alt"></i> Clear
+                </button>
+            </div>
+            
+            <p id="generate-message" class="hidden"></p>
+
+            <div id="results-container" class="hidden">
+                <div class="strength-bar-container">
+                    <div id="strength-bar" class="strength-bar"></div>
+                </div>
+
+                <div class="strength-text-group">
+                    <p id="strength-text" class="strength-text"></p>
+                    <p id="entropy-text" class="entropy-text"></p>
+                </div>
+                
+                <p id="time-to-crack-text"></p>
+
+                <div id="feedback-box" class="hidden">
+                    <h3>Suggestions:</h3>
+                    <ul id="feedback-list">
+                        </ul>
+                </div>
+            </div>
+
+            <button id="copy-button" class="btn btn-neon hidden">
+                <i class="fas fa-copy"></i> Copy Password
+            </button>
+            <p id="copy-message" class="hidden">Copied to clipboard!</p>
+        </div>
+    </div>
+
+    <div id="comparison-container" class="glass-container">
+        <div class="header-section">
+            <h2><i class="fas fa-balance-scale-right"></i> Password Comparison Tool</h2>
+        </div>
+
+        <div class="comparison-grid">
+            <div class="comparison-column">
+                <label for="password-a">Password A</label>
+                <div class="input-group">
+                    <input id="password-a" type="password" placeholder="Enter first password..." class="input-field">
+                    <button id="toggle-a" type="button" title="Toggle visibility" class="toggle-visibility-btn">
+                        <i id="icon-show-a" class="fas fa-eye"></i>
+                        <i id="icon-hide-a" class="fas fa-eye-slash hidden"></i>
+                    </button>
+                </div>
+                <div id="results-a" class="comparison-results hidden">
+                    <div class="strength-bar-container">
+                        <div id="bar-a" class="strength-bar"></div>
+                    </div>
+                    <div class="strength-text-group">
+                        <p id="strength-text-a" class="strength-text"></p>
+                        <p id="entropy-text-a" class="entropy-text"></p>
+                    </div>
+                    <p id="time-text-a" class="time-to-crack-text-comparison"></p>
+                </div>
+            </div>
+
+            <div class="comparison-column">
+                <label for="password-b">Password B</label>
+                <div class="input-group">
+                    <input id="password-b" type="password" placeholder="Enter second password..." class="input-field">
+                    <button id="toggle-b" type="button" title="Toggle visibility" class="toggle-visibility-btn">
+                        <i id="icon-show-b" class="fas fa-eye"></i>
+                        <i id="icon-hide-b" class="fas fa-eye-slash hidden"></i>
+                    </button>
+                </div>
+                <div id="results-b" class="comparison-results hidden">
+                    <div class="strength-bar-container">
+                        <div id="bar-b" class="strength-bar"></div>
+                    </div>
+                    <div class="strength-text-group">
+                        <p id="strength-text-b" class="strength-text"></p>
+                        <p id="entropy-text-b" class="entropy-text"></p>
+                    </div>
+                    <p id="time-text-b" class="time-to-crack-text-comparison"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="comparison-controls">
+            <button id="compare-button" class="btn btn-neon"><i class="fas fa-play"></i> Compare</button>
+            <button id="swap-button" class="btn btn-cyan"><i class="fas fa-exchange-alt"></i> Swap</button>
+            <button id="clear-comparison-button" class="btn btn-cyan"><i class="fas fa-trash-alt"></i> Clear All</button>
+        </div>
+
+        <p id="comparison-conclusion" class="hidden"></p>
+
+    </div>
+    <script>
+        // --- Main Analyzer DOM Elements ---
+        const passwordInput = document.getElementById('password-input');
+        const toggleButton = document.getElementById('toggle-visibility');
+        const iconShow = document.getElementById('icon-show');
+        const iconHide = document.getElementById('icon-hide');
+        
+        const resultsContainer = document.getElementById('results-container');
+        const strengthBar = document.getElementById('strength-bar');
+        const strengthText = document.getElementById('strength-text');
+        const entropyText = document.getElementById('entropy-text');
+        const timeToCrackText = document.getElementById('time-to-crack-text'); // FEATURE 2
+        
+        const feedbackBox = document.getElementById('feedback-box');
+        const feedbackList = document.getElementById('feedback-list');
+
+        const copyButton = document.getElementById('copy-button');
+        const copyMessage = document.getElementById('copy-message');
+
+        const generateStrongButton = document.getElementById('generate-strong-button');
+        const generateVeryStrongButton = document.getElementById('generate-very-strong-button');
+        const generateMessage = document.getElementById('generate-message');
+        const clearButton = document.getElementById('clear-button');
+
+        // --- FEATURE 1: Comparison Tool DOM Elements ---
+        const passwordA = document.getElementById('password-a');
+        const toggleA = document.getElementById('toggle-a');
+        const iconShowA = document.getElementById('icon-show-a');
+        const iconHideA = document.getElementById('icon-hide-a');
+        const resultsA = document.getElementById('results-a');
+        const barA = document.getElementById('bar-a');
+        const strengthTextA = document.getElementById('strength-text-a');
+        const entropyTextA = document.getElementById('entropy-text-a');
+        const timeTextA = document.getElementById('time-text-a');
+
+        const passwordB = document.getElementById('password-b');
+        const toggleB = document.getElementById('toggle-b');
+        const iconShowB = document.getElementById('icon-show-b');
+        const iconHideB = document.getElementById('icon-hide-b');
+        const resultsB = document.getElementById('results-b');
+        const barB = document.getElementById('bar-b');
+        const strengthTextB = document.getElementById('strength-text-b');
+        const entropyTextB = document.getElementById('entropy-text-b');
+        const timeTextB = document.getElementById('time-text-b');
+        
+        const compareButton = document.getElementById('compare-button');
+        const swapButton = document.getElementById('swap-button');
+        const clearComparisonButton = document.getElementById('clear-comparison-button');
+        const comparisonConclusion = document.getElementById('comparison-conclusion');
+
+        // --- Global State & Constants ---
+        let wasPasswordGenerated = false;
+        const GUESSES_PER_SECOND = 10_000_000_000; // 10 billion
+
+        const commonPasswords = new Set([
+            'password', '123456', '123456789', 'qwerty', '111111', 
+            '12345', '12345678', 'p@ssword', 'admin', 'pass', 'welcome'
+        ]);
+
+        // --- Event Listeners (Main Analyzer) ---
+        passwordInput.addEventListener('input', handlePasswordChange);
+        toggleButton.addEventListener('click', () => togglePasswordVisibility(passwordInput, iconShow, iconHide));
+        copyButton.addEventListener('click', copyPasswordToClipboard);
+        generateStrongButton.addEventListener('click', handleGenerateStrongPassword);
+        generateVeryStrongButton.addEventListener('click', handleGenerateVeryStrongPassword);
+        clearButton.addEventListener('click', resetUI);
+
+        // --- Event Listeners (Comparison Tool) ---
+        toggleA.addEventListener('click', () => togglePasswordVisibility(passwordA, iconShowA, iconHideA));
+        toggleB.addEventListener('click', () => togglePasswordVisibility(passwordB, iconShowB, iconHideB));
+        compareButton.addEventListener('click', handleCompare);
+        swapButton.addEventListener('click', handleSwap);
+        clearComparisonButton.addEventListener('click', handleClearComparison);
+
+        // --- Main Analyzer Functions ---
+
+        /**
+         * Main handler for the password input field.
+         */
+        function handlePasswordChange() {
+            wasPasswordGenerated = false; 
+            const password = passwordInput.value;
+
+            if (password.length === 0) {
+                resetUI();
+                return;
+            }
+
+            resultsContainer.classList.remove('hidden');
+            copyButton.classList.remove('hidden');
+            
+            // Get stats (handles common passwords internally)
+            const stats = getPasswordStats(password);
+
+            // Update the UI
+            updateUI(stats);
+        }
+
+        /**
+         * Copies the main password to the clipboard.
+         */
+        function copyPasswordToClipboard() {
+            const password = passwordInput.value;
+            if (!password) return;
+
+            const tempInput = document.createElement('textarea');
+            tempInput.value = password;
+            tempInput.style.position = 'absolute';
+            tempInput.style.left = '-9999px';
+            document.body.appendChild(tempInput);
+            
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999); 
+
+            try {
+                document.execCommand('copy');
+                
+                copyMessage.textContent = wasPasswordGenerated ? 'Generated password copied!' : 'Copied to clipboard!';
+                copyMessage.classList.remove('hidden');
+                copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                
+                setTimeout(() => {
+                    copyMessage.classList.add('hidden');
+                    copyButton.innerHTML = '<i class="fas fa-copy"></i> Copy Password';
+                    copyMessage.textContent = 'Copied to clipboard!'; 
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy password: ', err);
+                copyMessage.textContent = 'Failed to copy!';
+                copyMessage.classList.remove('hidden');
+            }
+            
+            document.body.removeChild(tempInput);
+        }
+
+        /**
+         * Generates a "Strong" password.
+         */
+        function handleGenerateStrongPassword() {
+            const newPassword = generatePassword(12, 16); // 12-16 chars
+            passwordInput.value = newPassword;
+            wasPasswordGenerated = true; 
+            handlePasswordChange(); 
+            pulseInput(); 
+            showGenerateMessage("Strong password generated!"); 
+        }
+        
+        /**
+         * Generates a "Very Strong" password.
+         */
+        function handleGenerateVeryStrongPassword() {
+            const newPassword = generatePassword(20, 24); // 20-24 chars
+            passwordInput.value = newPassword;
+            wasPasswordGenerated = true; 
+            handlePasswordChange(); 
+            pulseInput(); 
+            showGenerateMessage("Very strong password generated!"); 
+        }
+
+        /**
+         * Resets the main analyzer UI to its initial empty state.
+         */
+        function resetUI() {
+            passwordInput.value = '';
+            resultsContainer.classList.add('hidden');
+            copyButton.classList.add('hidden');
+            copyMessage.classList.add('hidden');
+            strengthBar.style.width = '0%';
+            strengthText.textContent = '';
+            entropyText.textContent = '';
+            timeToCrackText.textContent = ''; // FEATURE 2 Reset
+            feedbackBox.classList.add('hidden');
+            feedbackList.innerHTML = '';
+            wasPasswordGenerated = false; 
+            generateMessage.classList.add('hidden');
+        }
+
+        // --- Comparison Tool Functions (FEATURE 1) ---
+
+        /**
+         * MODIFIED (FIX): Handles the "Compare" button click.
+         * Now includes safeguards for comparing two very weak passwords
+         * or passwords with negligible strength differences.
+         */
+        function handleCompare() {
+            const passA = passwordA.value;
+            const passB = passwordB.value;
+
+            // 1. Get stats using the *new* logic
+            const statsA = getPasswordStats(passA);
+            const statsB = getPasswordStats(passB);
+            
+            // 2. Update UI columns regardless
+            if (passA) {
+                updateComparisonColumn(statsA, strengthTextA, entropyTextA, timeTextA, barA);
+                resultsA.classList.remove('hidden');
+            } else {
+                resultsA.classList.add('hidden');
+                barA.style.width = '0%'; // Explicitly reset bar
+            }
+            
+            if (passB) {
+                updateComparisonColumn(statsB, strengthTextB, entropyTextB, timeTextB, barB);
+                resultsB.classList.remove('hidden');
+            } else {
+                resultsB.classList.add('hidden');
+                barB.style.width = '0%'; // Explicitly reset bar
+            }
+
+            // 3. Check for empty inputs *after* updating UI
+            if (!passA || !passB) {
+                comparisonConclusion.textContent = 'Please enter both passwords to compare.';
+                comparisonConclusion.classList.remove('hidden');
+                return;
+            }
+
+            // 4. --- NEW SAFEGUARD ---
+            // If both passwords are "Very Weak", show a clear message and stop.
+            if (statsA.strength === 'Very Weak' && statsB.strength === 'Very Weak') {
+                comparisonConclusion.textContent = 'Both passwords are very weak and should not be used.';
+                comparisonConclusion.classList.remove('hidden');
+                return;
+            }
+
+            // 5. --- NEW SAFEGUARD ---
+            // Handle negligible entropy difference (e.g., less than 5 bits).
+            const entropyDiff = Math.abs(statsA.entropy - statsB.entropy);
+            if (entropyDiff < 5) {
+                comparisonConclusion.textContent = 'Both passwords have a similar strength level.';
+                comparisonConclusion.classList.remove('hidden');
+                return;
+            }
+
+            // 6. Calculate and show conclusion (only if safeguards are passed)
+            // Use 1 as a floor to prevent division by zero.
+            const combinationsA = (statsA.entropy > 0) ? Math.pow(2, statsA.entropy) : 1;
+            const combinationsB = (statsB.entropy > 0) ? Math.pow(2, statsB.entropy) : 1;
+
+            if (Math.abs(combinationsA - combinationsB) < 2) {
+                 comparisonConclusion.textContent = 'Both passwords have a similar strength level.';
+            } else if (combinationsB > combinationsA) {
+                const ratio = (combinationsB / combinationsA);
+                comparisonConclusion.textContent = `Password B is ${formatRatio(ratio)}× stronger than Password A.`;
+            } else {
+                const ratio = (combinationsA / combinationsB);
+                comparisonConclusion.textContent = `Password A is ${formatRatio(ratio)}× stronger than Password B.`;
+            }
+            comparisonConclusion.classList.remove('hidden');
+        }
+        
+        /**
+         * Formats the strength ratio for display.
+         */
+        function formatRatio(ratio) {
+            if (ratio > 1000) {
+                return ratio.toExponential(1); // e.g., "1.2e+4"
+            }
+            return ratio.toFixed(1); // e.g., "3.2"
+        }
+
+        /**
+         * MODIFIED (FIX): Updates a single column in the comparison UI.
+         * Now uses the `isCommon` flag.
+         */
+        function updateComparisonColumn(stats, strengthEl, entropyEl, timeEl, barEl) {
+            strengthEl.textContent = stats.strength;
+            strengthEl.style.color = stats.color;
+            
+            // FIX: Use isCommon flag here too
+            if (stats.isCommon) {
+                entropyEl.textContent = 'Compromised';
+            } else {
+                entropyEl.textContent = `Entropy: ${stats.entropy.toFixed(1)} bits`;
+            }
+            
+            timeEl.innerHTML = `<i class="fas fa-stopwatch"></i> ${stats.timeToCrack}`;
+            barEl.style.width = stats.width;
+            barEl.style.backgroundColor = stats.color;
+        }
+
+        /**
+         * Handles the "Swap" button click.
+         */
+        function handleSwap() {
+            const temp = passwordA.value;
+            passwordA.value = passwordB.value;
+            passwordB.value = temp;
+            
+            // Re-run comparison
+            handleCompare();
+        }
+
+        /**
+         * Handles the "Clear All" button for the comparison tool.
+         */
+        function handleClearComparison() {
+            passwordA.value = '';
+            passwordB.value = '';
+            resultsA.classList.add('hidden');
+            resultsB.classList.add('hidden');
+            comparisonConclusion.classList.add('hidden');
+            barA.style.width = '0%';
+            barB.style.width = '0%';
+        }
+
+
+        // --- Core Logic & Utility Functions ---
+
+        /**
+         * Toggles visibility for *any* password input.
+         */
+        function togglePasswordVisibility(inputElement, showIcon, hideIcon) {
+            if (inputElement.type === 'password') {
+                inputElement.type = 'text';
+                showIcon.classList.add('hidden');
+                hideIcon.classList.remove('hidden');
+            } else {
+                inputElement.type = 'password';
+                showIcon.classList.remove('hidden');
+                hideIcon.classList.add('hidden');
+            }
+        }
+        
+        /**
+         * MODIFIED (FIX): Wrapper function to get stats.
+         * Calculates entropy for *all* passwords first.
+         * Then checks if it's common and overrides strength/time but KEEPS entropy display.
+         */
+        function getPasswordStats(password) {
+            // 1. Always calculate the real strength stats first
+            const stats = calculateStrength(password);
+
+            // 2. Add the time-to-crack based on the real entropy
+            stats.timeToCrack = calculateTimeToCrack(stats.entropy);
+
+            // 3. Check if it's a common password
+            const isCommon = commonPasswords.has(password.toLowerCase());
+            stats.isCommon = isCommon; // Add this flag for the UI
+
+            // 4. If it IS common, override the results to show the "Compromised" state
+            if (isCommon) {
+                stats.strength = 'Very Weak';
+                stats.color = 'var(--red)';
+                stats.width = '10%';
+                stats.feedback = ['This is one of the most common passwords. Please choose something unique.'];
+                stats.timeToCrack = 'Instantly'; // Common passwords are cracked instantly
+            }
+
+            return stats;
+        }
+
+        /**
+         * MODIFIED (FIX): Calculates entropy, strength, and feedback.
+         * Removed the timeToCrack calculation from here.
+         */
+        function calculateStrength(password) {
+            const length = password.length;
+            let poolSize = 0;
+            let feedback = [];
+
+            if (/[a-z]/.test(password)) poolSize += 26;
+            else feedback.push('Add lowercase letters (a-z).');
+            
+            if (/[A-Z]/.test(password)) poolSize += 26;
+            else feedback.push('Add uppercase letters (A-Z).');
+
+            if (/[0-9]/.test(password)) poolSize += 10;
+            else feedback.push('Add numbers (0-9).');
+
+            if (/[^a-zA-Z0-9]/.test(password)) poolSize += 32;
+            else feedback.push('Add symbols (e.g., !@#$).');
+            
+            if (length < 8) feedback.push('Make it at least 8 characters long.');
+            else if (length < 12) feedback.push('Try making it 12+ characters for better strength.');
+
+            // FIX: Ensure entropy is 0 only if length or poolSize is 0
+            const entropy = (poolSize > 0 && length > 0) ? length * Math.log2(poolSize) : 0;
+
+            let strength, color, width;
+
+            if (entropy < 28) {
+                strength = 'Very Weak'; color = 'var(--red)'; width = '20%';
+            } else if (entropy < 36) {
+                strength = 'Weak'; color = 'var(--orange)'; width = '40%';
+            } else if (entropy < 60) {
+                strength = 'Medium'; color = 'var(--yellow)'; width = '60%';
+            } else if (entropy < 128) {
+                strength = 'Strong'; color = 'var(--light-green)'; width = '80%';
+                feedback = ['This is a strong password.'];
+            } else {
+                strength = 'Very Strong'; color = 'var(--neon-green)'; width = '100%';
+                feedback = ['This is a very strong password.'];
+            }
+
+            // Return stats *without* timeToCrack
+            return { entropy, strength, color, width, feedback };
+        }
+
+        /**
+         * Calculates estimated time to crack.
+         */
+        function calculateTimeToCrack(entropy) {
+            if (entropy === 0) return 'Instantly';
+
+            const combinations = Math.pow(2, entropy);
+            const seconds = combinations / GUESSES_PER_SECOND;
+
+            if (seconds < 1) return 'Instantly';
+            if (seconds < 60) return `${Math.ceil(seconds)} seconds`;
+            if (seconds < 3600) return `${Math.ceil(seconds / 60)} minutes`;
+            if (seconds < 86400) return `${Math.ceil(seconds / 3600)} hours`;
+            if (seconds < 31536000) return `${Math.ceil(seconds / 86400)} days`;
+            
+            const years = seconds / 31536000;
+            if (years < 1000) return `${Math.ceil(years)} years`;
+            if (years < 1_000_000) return `${Math.ceil(years / 1000)} thousand years`;
+            if (years < 1_000_000_000) return `${Math.ceil(years / 1_000_000)} million years`;
+            if (years < 1_000_000_000_000) return `${Math.ceil(years / 1_000_000_000)} billion years`;
+            
+            return 'Eternity'; // Effectively
+        }
+
+        /**
+         * MODIFIED (FIX): Updates all UI elements in the main analyzer.
+         * Now uses the `stats.isCommon` flag to show "Compromised Password".
+         */
+        function updateUI(stats) {
+            strengthBar.style.width = stats.width;
+            strengthBar.style.backgroundColor = stats.color;
+
+            strengthText.textContent = stats.strength;
+            strengthText.style.color = stats.color;
+            
+            // FIX: Check the isCommon flag instead of entropy === 0
+            if (stats.isCommon) {
+                entropyText.textContent = 'Compromised Password';
+            } else {
+                entropyText.textContent = `Entropy: ${stats.entropy.toFixed(1)} bits`;
+            }
+
+            timeToCrackText.innerHTML = `<i class="fas fa-stopwatch"></i> ${stats.timeToCrack}`;
+
+            animateElement(strengthText);
+            animateElement(entropyText);
+            animateElement(timeToCrackText);
+
+            // Update feedback
+            feedbackList.innerHTML = '';
+            if (stats.feedback && stats.feedback.length > 0) {
+                stats.feedback.forEach(tip => {
+                    const li = document.createElement('li');
+                    li.textContent = tip;
+                    feedbackList.appendChild(li);
+                });
+                feedbackBox.classList.remove('hidden');
+                animateElement(feedbackBox);
+            } else {
+                feedbackBox.classList.add('hidden');
+            }
+        }
+        
+        /**
+         * Helper to apply a "fadeIn" animation.
+         */
+        function animateElement(el) {
+            el.style.animation = 'none';
+            void el.offsetWidth; // Trigger reflow
+            el.style.animation = 'fadeIn 0.5s ease-in-out';
+        }
+
+        // --- Generator Helper Functions (Unchanged) ---
+        
+        function showGenerateMessage(message) {
+            generateMessage.textContent = message;
+            generateMessage.classList.remove('hidden');
+            setTimeout(() => {
+                generateMessage.classList.add('hidden');
+            }, 2000);
+        }
+
+        function pulseInput() {
+            passwordInput.classList.add('input-pulse');
+            setTimeout(() => {
+                passwordInput.classList.remove('input-pulse');
+            }, 600);
+        }
+
+        function generatePassword(minLength, maxLength) {
+            minLength = Math.max(4, minLength);
+            maxLength = Math.max(minLength, maxLength);
+            
+            const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
+            const charsets = {
+                lower: 'abcdefghijklmnopqrstuvwxyz',
+                upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                numbers: '0123456789',
+                symbols: '!@#$%^&*()_+-=[]{}|;:,./<>?'
+            };
+
+            let password = '';
+            password += charsets.lower[Math.floor(Math.random() * charsets.lower.length)];
+            password += charsets.upper[Math.floor(Math.random() * charsets.upper.length)];
+            password += charsets.numbers[Math.floor(Math.random() * charsets.numbers.length)];
+            password += charsets.symbols[Math.floor(Math.random() * charsets.symbols.length)];
+
+            const allChars = charsets.lower + charsets.upper + charsets.numbers + charsets.symbols;
+            for (let i = 4; i < length; i++) {
+                password += allChars[Math.floor(Math.random() * allChars.length)];
+            }
+            return shuffle(password);
+        }
+        
+        function shuffle(s) {
+            const arr = s.split('');
+            for(let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr.join('');
+        }
+
+    </script>
+    <div class="footer-credit">
+        <a href="https://www.instagram.com/adi__jod?igsh=cHVyejR4ZWk2bXph" target="_blank" rel="noopener noreferrer">
+            -𝙎𝙄𝙏𝙀 𝘽𝙔 𝘼𝘿𝙄-
+        </a>
+    </div>
+
+</body>
+</html>
